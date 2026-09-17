@@ -92,7 +92,6 @@
     <Compile Include="src\Identity.cs" />
     <Compile Include="src\NativeInterop.cs" />
     <Compile Include="src\ShellcodeRunner.cs" />
-    <Compile Include="src\C2Payload.cs" />
     <!-- LAST and internal: the entry finder keys on the first PUBLIC type, and the
          diagnostic MessageBox helper must never be reachable as one. -->
     <Compile Include="src\Diag.cs" />

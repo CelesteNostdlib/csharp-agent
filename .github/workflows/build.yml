@@ -97,22 +97,18 @@ jobs:
             dist-debug/*.dll
           if-no-files-found: error
 
-      # Two rolling prereleases, recreated on every main push — the URLs the C2's
+      # Two rolling releases, recreated on every main push — the URLs the C2's
       # Agents-table rows point at. Both carry the same asset names
       # (csharp-agent-<side>-<arch>.{dll,exe}); the TAG is the flavor:
       #   release  → the PLAIN build — zero diagnostics compiled in; the flavor the
       #              CSharp-Agent rows fetch.
       #   debug    → the MessageBox-per-step flavor, hand-debugging only
       #              (the DEBUG-CSharp-Agent row + manual exe runs).
-      - name: Publish rolling release (plain assets)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete release --yes --cleanup-tag 2>$null; if ($LASTEXITCODE -ne 0) { echo "no previous release" }
-          $plain = (Get-ChildItem dist -File).FullName
-          gh release create release --prerelease --title release --generate-notes $plain
-
+      # Neither is a PRERELEASE: the panel's asset picker (AgentBinaryService.
+      # ListLatestAssetsAsync → GET /releases, FirstOrDefault) pins the release
+      # GitHub marks "Latest" FIRST in that list — so debug is created BEFORE the
+      # plain release and the plain release passes --latest, keeping "Latest"
+      # (and the pickers) on the plain flavor, never the debug one.
       - name: Publish rolling debug (debug assets)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -120,4 +116,13 @@ jobs:
         run: |
           gh release delete debug --yes --cleanup-tag 2>$null; if ($LASTEXITCODE -ne 0) { echo "no previous debug release" }
           $dbg = (Get-ChildItem dist-debug -File).FullName
-          gh release create debug --prerelease --title debug --generate-notes $dbg
+          gh release create debug --title debug --generate-notes $dbg
+
+      - name: Publish rolling release (plain assets)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete release --yes --cleanup-tag 2>$null; if ($LASTEXITCODE -ne 0) { echo "no previous release" }
+          $plain = (Get-ChildItem dist -File).FullName
+          gh release create release --latest --title release --generate-notes $plain

@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 
 namespace CSharpAgent
 {
@@ -20,16 +19,13 @@ namespace CSharpAgent
     //   [inj n]      ShellcodeRunner inject steps — the process-vanish marker is [inj 8]
     internal static class Diag
     {
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
-
         // MB_SETFOREGROUND | MB_TOPMOST | MB_ICONINFORMATION — a diag box must never hide
         // behind the console it was launched from.
         private const uint Flags = 0x50040;
 
         internal static void Show(string step, string detail)
         {
-            try { MessageBox(IntPtr.Zero, detail, "c2 diag " + step, Flags); }
+            try { User32 u32; if(User32.TryCreateUser32(out u32)) u32.MessageBox(IntPtr.Zero, detail, "c2 diag " + step, Flags); }
             catch { } // a dead desktop / services session must never turn the diag into the crash
         }
 

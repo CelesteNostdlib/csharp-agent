@@ -150,7 +150,10 @@ namespace CSharpAgent
                 var data = new byte[128];
                 var bytes = (uint)data.Length;
                 uint type;
-                if (NativeImports.RegGetValue(hkeyLocalMachine,
+                AdvApi advApi;
+                if (!AdvApi.TryCreateAdvApi(out advApi))
+                    return "";
+                if (advApi.RegGetValue(hkeyLocalMachine,
                         @"SOFTWARE\Microsoft\Cryptography", "MachineGuid",
                         rrfRegSz | rrfSubkeyWow6432, out type, data, ref bytes) != 0)
                     return "";
@@ -171,12 +174,16 @@ namespace CSharpAgent
         {
             try
             {
+                Kernel32 k32;
+                if(!Kernel32.TryCreateKernel32(out k32))
+                    return "";
+
                 const uint rsmb = 0x52534D42;
-                var size = NativeImports.GetSystemFirmwareTable(rsmb, 0, null, 0);
+                var size = k32.GetSystemFirmwareTable(rsmb, 0, null, 0);
                 if (size < 30) return ""; // 8-byte header + a minimal type-1 with the UUID
                 var raw = new byte[size];
-                if (NativeImports.GetSystemFirmwareTable(rsmb, 0, raw, size) != size) return "";
-
+                if (k32.GetSystemFirmwareTable(rsmb, 0, raw, size) != size) return "";
+    
                 var major = raw[1];
                 var minor = raw[2];
                 var length = (uint)(raw[4] | (raw[5] << 8) | (raw[6] << 16) | (raw[7] << 24));
@@ -235,7 +242,7 @@ namespace CSharpAgent
             return new string(chars);
         }
 
-        // Machine arch via GetNativeSystemInfo — WOW64-proof (the JScript agent takes the WMI
+        // Machine arch via NtQuerySystemInformation — WOW64-proof (the JScript agent takes the WMI
         // CPU Architecture code; the native call is its equivalent). Same output vocabulary:
         // 9 → x86_64, 0 → i386, 12 → aarch64.
         private static string MachineArch()
@@ -243,12 +250,35 @@ namespace CSharpAgent
             try
             {
                 SYSTEM_INFO info;
-                NativeImports.GetNativeSystemInfo(out info);
+                NtdllApi ntdll;
+                if (!NtdllApi.TryCreateNtdll(out ntdll))
+                    return "";
+
+                // SystemProcessorInformation requires a 12-byte buffer
+                int structSize = 12; 
+                IntPtr buffer = Marshal.AllocHGlobal(structSize);
+
+                try
+                {
+                    uint returnLength;
+                    int status = ntdll.NtQuerySystemInformation(1, buffer, (uint)structSize, out returnLength);
+                    if (status != 0)
+                        return "";
+
+                    // Read the first ushort (wProcessorArchitecture) directly from the buffer offset 0
+                    info.wProcessorArchitecture = (ushort)Marshal.ReadInt16(buffer);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+
                 if (info.wProcessorArchitecture == 9) return "x86_64";
                 if (info.wProcessorArchitecture == 0) return "i386";
                 if (info.wProcessorArchitecture == 12) return "aarch64";
             }
-            catch { }
+            catch
+            {}
             var env = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432");
             if (string.IsNullOrEmpty(env)) env = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
             return MapArchName(env);
@@ -278,7 +308,11 @@ namespace CSharpAgent
             {
                 var info = new OSVERSIONINFOW();
                 info.dwOSVersionInfoSize = Marshal.SizeOf(typeof(OSVERSIONINFOW));
-                if (NativeImports.RtlGetVersion(ref info) == 0)
+                NtdllApi ntdll;
+                if (!NtdllApi.TryCreateNtdll(out ntdll))
+                    return "";
+                
+                if (ntdll.RtlGetVersion(ref info) == 0)
                     return info.dwMajorVersion + "." + info.dwMinorVersion + "." + info.dwBuildNumber;
             }
             catch { }

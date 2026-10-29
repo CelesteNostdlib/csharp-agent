@@ -153,7 +153,7 @@ namespace CSharpAgent
                 AdvApi advApi;
                 if (!AdvApi.TryCreateAdvApi(out advApi))
                     return "";
-                if (advApi.RegGetValue(hkeyLocalMachine,
+                if (advApi.RegGetValueW(hkeyLocalMachine,
                         @"SOFTWARE\Microsoft\Cryptography", "MachineGuid",
                         rrfRegSz | rrfSubkeyWow6432, out type, data, ref bytes) != 0)
                     return "";

@@ -7,6 +7,7 @@ namespace CSharpAgent
     {
         [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
         public delegate int MessageBoxDelegate(IntPtr hWnd, string lpText, string lpCaption, uint uType);
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
         private delegate IntPtr LoadLibraryWDelegate(string lpLibFileName);
 
         public IntPtr ModuleHandle;

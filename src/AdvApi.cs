@@ -5,14 +5,15 @@ namespace CSharpAgent
 {
     public class AdvApi
     {
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
         public delegate int RegGetValueDelegate(IntPtr hkey, string lpSubKey, string lpValue, uint dwFlags, out uint pdwType, byte[] pvData, ref uint pcbData);
 
-        public RegGetValueDelegate RegGetValue;
+        public RegGetValueDelegate RegGetValueW; 
         public IntPtr ModuleHandle;
 
         private AdvApi(IntPtr moduleHandle, RegGetValueDelegate regGetValue){
             ModuleHandle = moduleHandle;
-            RegGetValue = regGetValue;
+            RegGetValueW = regGetValue;
         }
 
         public static bool TryCreateAdvApi(out AdvApi instance)
@@ -22,7 +23,7 @@ namespace CSharpAgent
             if (moduleHandle == IntPtr.Zero)
                 return false;
 
-            IntPtr ptrRegGetValue = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RegGetValue"));
+            IntPtr ptrRegGetValue = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RegGetValueW"));
             if (ptrRegGetValue == IntPtr.Zero)
                 return false;
 

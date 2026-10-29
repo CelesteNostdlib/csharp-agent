@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace CSharpAgent
 {
-    public class PebWalker
+    internal class PebWalker
     {
         public static IntPtr IntPtrAdd(IntPtr p0, int p1)
         {

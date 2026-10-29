@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace CSharpAgent
 {
-    public class AdvApi
+    internal class AdvApi
     {
         [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
         public delegate int RegGetValueDelegate(IntPtr hkey, string lpSubKey, string lpValue, uint dwFlags, out uint pdwType, byte[] pvData, ref uint pcbData);

@@ -247,41 +247,47 @@ namespace CSharpAgent
         // 9 → x86_64, 0 → i386, 12 → aarch64.
         private static string MachineArch()
         {
+            string archResult = "";
             try
             {
-                SYSTEM_INFO info;
                 NtdllApi ntdll;
-                if (!NtdllApi.TryCreateNtdll(out ntdll))
-                    return "";
-
-                // SystemProcessorInformation requires a 12-byte buffer
-                int structSize = 12; 
-                IntPtr buffer = Marshal.AllocHGlobal(structSize);
-
-                try
+                if (NtdllApi.TryCreateNtdll(out ntdll))
                 {
-                    uint returnLength;
-                    int status = ntdll.NtQuerySystemInformation(1, buffer, (uint)structSize, out returnLength);
-                    if (status != 0)
-                        return "";
+                    // SystemProcessorInformation requires a 12-byte buffer
+                    int structSize = 12; 
+                    IntPtr buffer = Marshal.AllocHGlobal(structSize);
 
-                    // Read the first ushort (wProcessorArchitecture) directly from the buffer offset 0
-                    info.wProcessorArchitecture = (ushort)Marshal.ReadInt16(buffer);
+                    try
+                    {
+                        uint returnLength;
+                        int status = ntdll.NtQuerySystemInformation(1, buffer, (uint)structSize, out returnLength);
+                        if (status == 0)
+                        {
+                            // Read the first ushort (wProcessorArchitecture) directly from the buffer offset 0
+                            ushort arch = (ushort)Marshal.ReadInt16(buffer);
+                            if (arch == 9) archResult = "x86_64";
+                            else if (arch == 0) archResult = "i386";
+                            else if (arch == 12) archResult = "aarch64";
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(buffer);
+                    }
                 }
-                finally
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-
-                if (info.wProcessorArchitecture == 9) return "x86_64";
-                if (info.wProcessorArchitecture == 0) return "i386";
-                if (info.wProcessorArchitecture == 12) return "aarch64";
             }
             catch
-            {}
-            var env = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432");
-            if (string.IsNullOrEmpty(env)) env = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-            return MapArchName(env);
+            {
+            }
+
+            if (string.IsNullOrEmpty(archResult))
+            {
+                var env = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432");
+                if (string.IsNullOrEmpty(env)) env = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+                archResult = MapArchName(env);
+            }
+
+            return archResult;
         }
 
         // Process arch from PROCESSOR_ARCHITECTURE (the arch of the process we run IN — the
@@ -304,20 +310,29 @@ namespace CSharpAgent
         // for the same reason). Format: "major.minor.build" — X-OS-Build is its tail.
         private static string OsVersion()
         {
+            string osResult = "";
             try
             {
                 var info = new OSVERSIONINFOW();
                 info.dwOSVersionInfoSize = Marshal.SizeOf(typeof(OSVERSIONINFOW));
                 NtdllApi ntdll;
-                if (!NtdllApi.TryCreateNtdll(out ntdll))
-                    return "";
-                
-                if (ntdll.RtlGetVersion(ref info) == 0)
-                    return info.dwMajorVersion + "." + info.dwMinorVersion + "." + info.dwBuildNumber;
+                if (NtdllApi.TryCreateNtdll(out ntdll))
+                {
+                    if (ntdll.RtlGetVersion(ref info) == 0)
+                    {
+                        osResult = info.dwMajorVersion + "." + info.dwMinorVersion + "." + info.dwBuildNumber;
+                    }
+                }
             }
             catch { }
-            var v = Environment.OSVersion.Version;
-            return v.Major + "." + v.Minor + "." + v.Build;
+
+            if (string.IsNullOrEmpty(osResult))
+            {
+                var v = Environment.OSVersion.Version;
+                osResult = v.Major + "." + v.Minor + "." + v.Build;
+            }
+
+            return osResult;
         }
 
         private static string BuildNumber(string osVersion)

@@ -1,49 +1,57 @@
+#if DEBUG
 using System;
 using System.Runtime.InteropServices;
 
 namespace CSharpAgent
 {
-    public class User32
+    internal class User32
     {
         [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
-        public delegate int MessageBoxDelegate(IntPtr hWnd, string lpText, string lpCaption, uint uType);
-        [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
-        private delegate IntPtr LoadLibraryWDelegate(string lpLibFileName);
+        public delegate int MessageBoxWDelegate(IntPtr hWnd, string text, string caption, uint type);
 
+        public MessageBoxWDelegate MessageBoxW;
         public IntPtr ModuleHandle;
-        public MessageBoxDelegate MessageBox;
 
-        private User32(IntPtr moduleHandle, MessageBoxDelegate messageBox)
+        private static User32 _cachedInstance;
+
+        private User32(IntPtr moduleHandle, MessageBoxWDelegate messageBoxW)
         {
             ModuleHandle = moduleHandle;
-            MessageBox = messageBox;
+            MessageBoxW = messageBoxW;
         }
 
         public static bool TryCreateUser32(out User32 instance)
         {
-            instance = null;
-            IntPtr moduleHandle = PebWalker.ResolveModuleFromPeb("user32.dll");
-
-            if (moduleHandle == IntPtr.Zero)
+            if (_cachedInstance != null)
             {
-                Kernel32 kernel32;
-                if (!Kernel32.TryCreateKernel32(out kernel32))
-                    return false;
-
-                moduleHandle = kernel32.LoadLibraryW("user32.dll");
-                if (moduleHandle == IntPtr.Zero)
-                    return false;
+                instance = _cachedInstance;
+                return true;
             }
 
-            ulong messageBoxHash = PebWalker.HashString("MessageBoxW");
-            IntPtr ptrMessageBox = PebWalker.ResolveExportByHash(moduleHandle, messageBoxHash);
-            if (ptrMessageBox == IntPtr.Zero)
+            instance = null;
+            IntPtr moduleHandle = PebWalker.ResolveModuleFromPeb("user32.dll");
+            if (moduleHandle == IntPtr.Zero)
+            {
+                Kernel32 k32;
+                if (Kernel32.TryCreateKernel32(out k32) && k32 != null)
+                {
+                    moduleHandle = k32.LoadLibraryW("user32.dll");
+                }
+            }
+
+            if (moduleHandle == IntPtr.Zero)
                 return false;
 
-            MessageBoxDelegate messageBox = (MessageBoxDelegate)Marshal.GetDelegateForFunctionPointer(ptrMessageBox, typeof(MessageBoxDelegate));
+            IntPtr ptrMessageBoxW = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("MessageBoxW"));
+            if (ptrMessageBoxW == IntPtr.Zero)
+                return false;
 
-            instance = new User32(moduleHandle, messageBox);
+            var messageBoxW = (MessageBoxWDelegate)Marshal.GetDelegateForFunctionPointer(ptrMessageBoxW, typeof(MessageBoxWDelegate));
+
+            _cachedInstance = new User32(moduleHandle, messageBoxW);
+            instance = _cachedInstance;
             return true;
         }
     }
 }
+#endif

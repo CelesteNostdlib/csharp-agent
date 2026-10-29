@@ -3,17 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace CSharpAgent
 {
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct SYSTEM_PROCESSOR_INFORMATION
-    {
-        public ushort ProcessorArchitecture;
-        public ushort ProcessorLevel;
-        public ushort ProcessorRevision;
-        public ushort Reserved;
-        public uint ProcessorFeatureBits;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     internal struct Parameters
     {

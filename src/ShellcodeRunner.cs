@@ -24,17 +24,9 @@ namespace CSharpAgent
             if(!Kernel32.TryCreateKernel32(out k32))
                 throw new InvalidOperationException("Failed to create Kernel32 instance");
 
-            SYSTEM_PROCESSOR_INFORMATION sysInfo;
-            int size = Marshal.SizeOf(typeof(SYSTEM_PROCESSOR_INFORMATION));
-            IntPtr buffer = Marshal.AllocHGlobal(size);
-            uint returnLength;
-            int status = ntdll.NtQuerySystemInformation(1, buffer, (uint)size, out returnLength);
-
-            if (status != 0)
-                throw new InvalidOperationException("NtQuerySystemInformation failed — NTSTATUS 0x" + ((uint)status).ToString("X8"));
-                
-            sysInfo = (SYSTEM_PROCESSOR_INFORMATION)Marshal.PtrToStructure(buffer, typeof(SYSTEM_PROCESSOR_INFORMATION));
-            bool isArm64 = sysInfo.ProcessorArchitecture == 12 && IntPtr.Size == 8;
+            SYSTEM_INFO sysInfo = new SYSTEM_INFO();
+            k32.GetNativeSystemInfo(ref sysInfo);
+            bool isArm64 = sysInfo.wProcessorArchitecture == 12 && IntPtr.Size == 8;
             IntPtr tebAddress = PebWalker.GetTebAddress();
           
 #if DEBUG

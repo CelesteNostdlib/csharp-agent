@@ -47,17 +47,17 @@ namespace CSharpAgent
             if (ptrRtlGetVersion == IntPtr.Zero)
                 return false;
 
-            RtlGetVersionDelegate rtlGetVersion = Marshal.GetDelegateForFunctionPointer<RtlGetVersionDelegate>(ptrRtlGetVersion);
+            RtlGetVersionDelegate rtlGetVersion = (RtlGetVersionDelegate)Marshal.GetDelegateForFunctionPointer(ptrRtlGetVersion, typeof(RtlGetVersionDelegate));
             IntPtr ptrNtQuerySystemInformation = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("NtQuerySystemInformation"));
             if (ptrNtQuerySystemInformation == IntPtr.Zero)
                 return false;
 
-            NtQuerySystemInformationDelegate ntQuerySystemInformation = Marshal.GetDelegateForFunctionPointer<NtQuerySystemInformationDelegate>(ptrNtQuerySystemInformation);
+            NtQuerySystemInformationDelegate ntQuerySystemInformation = (NtQuerySystemInformationDelegate)Marshal.GetDelegateForFunctionPointer(ptrNtQuerySystemInformation, typeof(NtQuerySystemInformationDelegate));
             IntPtr ptrRtlAllocateHeap = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RtlAllocateHeap"));
             if (ptrRtlAllocateHeap == IntPtr.Zero)
                 return false;
 
-            RtlAllocateHeapDelegate rtlAllocateHeap = Marshal.GetDelegateForFunctionPointer<RtlAllocateHeapDelegate>(ptrRtlAllocateHeap);
+            RtlAllocateHeapDelegate rtlAllocateHeap = (RtlAllocateHeapDelegate)Marshal.GetDelegateForFunctionPointer(ptrRtlAllocateHeap, typeof(RtlAllocateHeapDelegate));
             IntPtr ptrRtlFreeHeap = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RtlFreeHeap"));
             if (ptrRtlFreeHeap == IntPtr.Zero)
                 return false;
@@ -65,8 +65,8 @@ namespace CSharpAgent
             if (ptrNtAllocateVirtualMemory == IntPtr.Zero)
                 return false;
 
-            NtAllocateVirtualMemoryDelegate ntAllocateVirtualMemory = Marshal.GetDelegateForFunctionPointer<NtAllocateVirtualMemoryDelegate>(ptrNtAllocateVirtualMemory);
-            RtlFreeHeapDelegate rtlFreeHeap = Marshal.GetDelegateForFunctionPointer<RtlFreeHeapDelegate>(ptrRtlFreeHeap);
+            NtAllocateVirtualMemoryDelegate ntAllocateVirtualMemory = (NtAllocateVirtualMemoryDelegate)Marshal.GetDelegateForFunctionPointer(ptrNtAllocateVirtualMemory, typeof(NtAllocateVirtualMemoryDelegate));
+            RtlFreeHeapDelegate rtlFreeHeap = (RtlFreeHeapDelegate)Marshal.GetDelegateForFunctionPointer(ptrRtlFreeHeap, typeof(RtlFreeHeapDelegate));
 
             instance = new NtdllApi(
                 moduleHandle,

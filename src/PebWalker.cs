@@ -14,11 +14,9 @@ namespace CSharpAgent
         private delegate IntPtr GetTebDelegate();
 
         public static IntPtr GetTebAddress(){
-            Architecture arch = RuntimeInformation.ProcessArchitecture;
-            bool isArm64 = arch == Architecture.Arm64;
-
+            var processorArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
             byte[] asm;
-            if (isArm64)
+            if (processorArch == "ARM64")
                 // mov x0, x18; ret
                 asm = new byte[] { 0xE0, 0x03, 0x12, 0xAA, 0xC0, 0x03, 0x5F, 0xD6 };
             else if (IntPtr.Size == 8)

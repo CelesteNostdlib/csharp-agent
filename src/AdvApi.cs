@@ -26,7 +26,7 @@ namespace CSharpAgent
             if (ptrRegGetValue == IntPtr.Zero)
                 return false;
 
-            RegGetValueDelegate regGetValue = Marshal.GetDelegateForFunctionPointer<RegGetValueDelegate>(ptrRegGetValue);
+            RegGetValueDelegate regGetValue = (RegGetValueDelegate)Marshal.GetDelegateForFunctionPointer(ptrRegGetValue, typeof(RegGetValueDelegate));
 
             instance = new AdvApi(moduleHandle, regGetValue);
 

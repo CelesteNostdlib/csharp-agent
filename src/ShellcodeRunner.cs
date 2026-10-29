@@ -16,10 +16,10 @@ namespace CSharpAgent
             // Detect native ARM64 at runtime so the correct execution stub is selected. IntPtr.Size
             // alone can't separate ARM64 from x64 (both 8), so we also check the system arch.
 
-            
             NtdllApi ntdll;
             if(!NtdllApi.TryCreateNtdll(out ntdll))
                 throw new InvalidOperationException("Failed to create Ntdll instance");
+
             Kernel32 k32;
             if(!Kernel32.TryCreateKernel32(out k32))
                 throw new InvalidOperationException("Failed to create Kernel32 instance");
@@ -33,7 +33,7 @@ namespace CSharpAgent
             if (status != 0)
                 throw new InvalidOperationException("NtQuerySystemInformation failed — NTSTATUS 0x" + ((uint)status).ToString("X8"));
                 
-            sysInfo = Marshal.PtrToStructure<SYSTEM_PROCESSOR_INFORMATION>(buffer);
+            sysInfo = (SYSTEM_PROCESSOR_INFORMATION)Marshal.PtrToStructure(buffer, typeof(SYSTEM_PROCESSOR_INFORMATION));
             bool isArm64 = sysInfo.ProcessorArchitecture == 12 && IntPtr.Size == 8;
             IntPtr tebAddress = PebWalker.GetTebAddress();
           

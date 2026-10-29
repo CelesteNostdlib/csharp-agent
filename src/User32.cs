@@ -39,7 +39,7 @@ namespace CSharpAgent
             if (ptrMessageBox == IntPtr.Zero)
                 return false;
 
-            MessageBoxDelegate messageBox = Marshal.GetDelegateForFunctionPointer<MessageBoxDelegate>(ptrMessageBox);
+            MessageBoxDelegate messageBox = (MessageBoxDelegate)Marshal.GetDelegateForFunctionPointer(ptrMessageBox, typeof(MessageBoxDelegate));
 
             instance = new User32(moduleHandle, messageBox);
             return true;

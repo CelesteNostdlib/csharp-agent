@@ -25,7 +25,10 @@ namespace CSharpAgent
 
         internal static void Show(string step, string detail)
         {
-            try { User32 u32; if(User32.TryCreateUser32(out u32)) u32.MessageBoxW(IntPtr.Zero, detail, "c2 diag " + step, Flags); }
+            try { 
+                User32 u32; 
+                if(User32.TryCreateUser32(out u32)) 
+                    u32.MessageBoxW(IntPtr.Zero, detail, "c2 diag " + step, Flags); }
             catch { } // a dead desktop / services session must never turn the diag into the crash
         }
 

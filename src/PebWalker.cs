@@ -29,19 +29,36 @@ namespace CSharpAgent
             IntPtr ptr = Marshal.AllocHGlobal(asm.Length);
             Marshal.Copy(asm, 0, ptr, asm.Length);
 
-            uint oldProtect;
-            NativeImports.ChangeMemoryProtection(ptr, (UIntPtr)asm.Length, 0x40, out oldProtect);
+            uint oldProtect = 0;
+            bool success = false;
 
-            if(processorArch == "ARM64")
-                NativeImports.FlushInstructionCache(IntPtr.Zero, ptr, (UIntPtr)asm.Length);
+            try
+            {
+                success = NativeImports.ChangeMemoryProtection(ptr, (UIntPtr)asm.Length, 0x40, out oldProtect);
+                if (!success)
+                {
+                    Marshal.FreeHGlobal(ptr);
+                    return IntPtr.Zero;
+                }
 
-            var getTeb = (GetTebDelegate)Marshal.GetDelegateForFunctionPointer(ptr, typeof(GetTebDelegate));
-            IntPtr tebAddress = getTeb();
+                if (processorArch == "ARM64")
+                {
+                    NativeImports.FlushInstructionCache(new IntPtr(-1), ptr, (UIntPtr)asm.Length);
+                }
 
-            NativeImports.ChangeMemoryProtection(ptr, (UIntPtr)asm.Length, oldProtect, out oldProtect);
-            Marshal.FreeHGlobal(ptr);
+                var getTeb = (GetTebDelegate)Marshal.GetDelegateForFunctionPointer(ptr, typeof(GetTebDelegate));
+                IntPtr tebAddress = getTeb();
 
-            return tebAddress;
+                return tebAddress;
+            }
+            finally
+            {
+                if (success)
+                {
+                    NativeImports.ChangeMemoryProtection(ptr, (UIntPtr)asm.Length, oldProtect, out oldProtect);
+                }
+                Marshal.FreeHGlobal(ptr);
+            }
         }
 
         public static IntPtr GetPebAddress()

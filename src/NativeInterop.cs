@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace CSharpAgent
 {
-    [StructLayout(LayoutKind.Sequential)]
     internal struct Parameters
     {
         public uint InjectorVersion;
@@ -12,7 +11,7 @@ namespace CSharpAgent
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct SYSTEM_INFO
+    internal struct SYSTEM_INFO
     {
         public ushort wProcessorArchitecture;
         public ushort wReserved;
@@ -28,7 +27,7 @@ namespace CSharpAgent
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct OSVERSIONINFOW
+    internal struct OSVERSIONINFOW
     {
         public int dwOSVersionInfoSize;
         public int dwMajorVersion;
@@ -39,7 +38,6 @@ namespace CSharpAgent
         public string szCSDVersion;
     }
 
-
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal delegate int EntryDelegate(ulong injectorVersion);
 
@@ -47,6 +45,7 @@ namespace CSharpAgent
     {
         [DllImport("kernel32.dll", EntryPoint = "VirtualProtect", SetLastError = true)]
         internal static extern bool ChangeMemoryProtection(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+        
         [DllImport("kernel32.dll", EntryPoint = "FlushInstructionCache", SetLastError = true)]
         internal static extern bool FlushInstructionCache(IntPtr hProcess, IntPtr lpBaseAddress, UIntPtr dwSize);
     }

@@ -64,6 +64,9 @@ namespace CSharpAgent
         public static IntPtr GetPebAddress()
         {
             IntPtr tebAddress = GetTebAddress();
+            if (tebAddress == IntPtr.Zero)
+                return IntPtr.Zero;
+
             IntPtr pebAddress = Marshal.ReadIntPtr(IntPtrAdd(tebAddress, IntPtr.Size == 8 ? 0x60 : 0x30));
             return pebAddress;
         }
@@ -71,6 +74,9 @@ namespace CSharpAgent
         public static IntPtr ResolveModuleFromPeb(string moduleName)
         {
             IntPtr pebAddress = GetPebAddress();
+            if (pebAddress == IntPtr.Zero)
+                return IntPtr.Zero;
+
             return ResolveModuleFromPeb(pebAddress, moduleName);
         }
 
@@ -91,13 +97,16 @@ namespace CSharpAgent
 
                 int dllBaseOffset = IntPtr.Size == 8 ? 0x30 : 0x18;
                 IntPtr dllBase = Marshal.ReadIntPtr(IntPtrAdd(entryBase, dllBaseOffset));
+                
+                int lengthOffset = IntPtr.Size == 8 ? 0x58 : 0x2C;
+                ushort nameLen = (ushort)Marshal.ReadInt16(IntPtrAdd(entryBase, lengthOffset));
 
                 int bufferOffset = IntPtr.Size == 8 ? 0x60 : 0x30;
                 IntPtr pwszBuffer = Marshal.ReadIntPtr(IntPtrAdd(entryBase, bufferOffset));
 
                 if (pwszBuffer != IntPtr.Zero)
                 {
-                    string curModuleName = Marshal.PtrToStringUni(pwszBuffer);
+                    string curModuleName = Marshal.PtrToStringUni(pwszBuffer, nameLen / 2);
                     if (!string.IsNullOrEmpty(curModuleName) && curModuleName.Equals(moduleName, StringComparison.OrdinalIgnoreCase))
                     {
                         return dllBase;

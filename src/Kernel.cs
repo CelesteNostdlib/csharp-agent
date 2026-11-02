@@ -6,7 +6,6 @@ namespace CSharpAgent
     internal class Kernel32
     {
         public delegate IntPtr GetProcAddressDelegate(IntPtr hModule, string lpProcName);
-        public delegate bool FlushInstructionCacheDelegate(IntPtr hProcess, IntPtr lpBaseAddress, UIntPtr dwSize);
         public delegate uint GetSystemFirmwareTableDelegate(uint firmwareTableProviderSignature, uint firmwareTableID, byte[] firmwareTableBuffer, uint size);  
         
         [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
@@ -15,7 +14,6 @@ namespace CSharpAgent
 
         // Read-only fields ensure immutability and prevent accidental overwriting
         public readonly GetProcAddressDelegate GetProcAddress;
-        public readonly FlushInstructionCacheDelegate FlushInstructionCache;
         public readonly GetSystemFirmwareTableDelegate GetSystemFirmwareTable;
         public readonly LoadLibraryWDelegate LoadLibraryW;
         public readonly GetNativeSystemInfoDelegate GetNativeSystemInfo;
@@ -26,14 +24,12 @@ namespace CSharpAgent
         private Kernel32(
             IntPtr moduleHandle,
             GetProcAddressDelegate getProcAddress,
-            FlushInstructionCacheDelegate flushInstructionCache,
             GetSystemFirmwareTableDelegate getSystemFirmwareTable,
             LoadLibraryWDelegate loadLibraryW,
             GetNativeSystemInfoDelegate getNativeSystemInfo)
         {
             ModuleHandle = moduleHandle;
             GetProcAddress = getProcAddress;
-            FlushInstructionCache = flushInstructionCache;
             GetSystemFirmwareTable = getSystemFirmwareTable;
             LoadLibraryW = loadLibraryW;
             GetNativeSystemInfo = getNativeSystemInfo;
@@ -61,14 +57,12 @@ namespace CSharpAgent
 
             IntPtr ptrVirtualProtect           = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("VirtualProtect"));
             IntPtr ptrGetProcAddress           = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetProcAddress"));
-            IntPtr ptrFlushInstructionCache  = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("FlushInstructionCache"));
             IntPtr ptrGetSystemFirmwareTable = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetSystemFirmwareTable"));
             IntPtr ptrLoadLibraryW             = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("LoadLibraryW"));
             IntPtr ptrGetNativeSystemInfo    = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetNativeSystemInfo"));
 
             if (ptrVirtualProtect == IntPtr.Zero || 
                 ptrGetProcAddress == IntPtr.Zero || 
-                ptrFlushInstructionCache == IntPtr.Zero ||
                 ptrGetSystemFirmwareTable == IntPtr.Zero ||
                 ptrLoadLibraryW == IntPtr.Zero ||
                 ptrGetNativeSystemInfo == IntPtr.Zero)
@@ -78,8 +72,6 @@ namespace CSharpAgent
 
             var getProcAddress = (GetProcAddressDelegate)Marshal.GetDelegateForFunctionPointer(
                 ptrGetProcAddress, typeof(GetProcAddressDelegate));
-            var flushInstructionCache = (FlushInstructionCacheDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrFlushInstructionCache, typeof(FlushInstructionCacheDelegate));
             var getSystemFirmwareTable = (GetSystemFirmwareTableDelegate)Marshal.GetDelegateForFunctionPointer(
                 ptrGetSystemFirmwareTable, typeof(GetSystemFirmwareTableDelegate));
             var loadLibraryW = (LoadLibraryWDelegate)Marshal.GetDelegateForFunctionPointer(
@@ -90,7 +82,6 @@ namespace CSharpAgent
             cachedKernel = new Kernel32(
                 moduleHandle,
                 getProcAddress,
-                flushInstructionCache,
                 getSystemFirmwareTable,
                 loadLibraryW,
                 getNativeSystemInfo

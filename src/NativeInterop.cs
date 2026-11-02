@@ -47,5 +47,7 @@ namespace CSharpAgent
     {
         [DllImport("kernel32.dll", EntryPoint = "VirtualProtect", SetLastError = true)]
         internal static extern bool ChangeMemoryProtection(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+        [DllImport("kernel32.dll", EntryPoint = "FlushInstructionCache", SetLastError = true)]
+        internal static extern bool FlushInstructionCache(IntPtr hProcess, IntPtr lpBaseAddress, UIntPtr dwSize);
     }
 }

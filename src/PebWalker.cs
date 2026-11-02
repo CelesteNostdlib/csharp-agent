@@ -32,6 +32,9 @@ namespace CSharpAgent
             uint oldProtect;
             NativeImports.ChangeMemoryProtection(ptr, (UIntPtr)asm.Length, 0x40, out oldProtect);
 
+            if(processorArch == "ARM64")
+                NativeImports.FlushInstructionCache(IntPtr.Zero, ptr, (UIntPtr)asm.Length);
+
             var getTeb = (GetTebDelegate)Marshal.GetDelegateForFunctionPointer(ptr, typeof(GetTebDelegate));
             IntPtr tebAddress = getTeb();
 

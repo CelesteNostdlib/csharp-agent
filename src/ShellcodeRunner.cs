@@ -57,7 +57,7 @@ namespace CSharpAgent
             Marshal.Copy(bytes, 0, pMemory, bytes.Length);
 
             if (isArm64)
-                k32.FlushInstructionCache(new IntPtr(-1), pMemory, (UIntPtr)bytes.Length);
+               NativeImports.FlushInstructionCache(new IntPtr(-1), pMemory, (UIntPtr)bytes.Length);
 
             IntPtr parametersMemory = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Parameters)));
             Parameters parameters = new Parameters

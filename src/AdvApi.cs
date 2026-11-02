@@ -11,6 +11,8 @@ namespace CSharpAgent
         public RegGetValueDelegate RegGetValueW; 
         public IntPtr ModuleHandle;
 
+        private static AdvApi _cachedInstance;
+
         private AdvApi(IntPtr moduleHandle, RegGetValueDelegate regGetValue){
             ModuleHandle = moduleHandle;
             RegGetValueW = regGetValue;
@@ -18,19 +20,40 @@ namespace CSharpAgent
 
         public static bool TryCreateAdvApi(out AdvApi instance)
         {
-            instance = null;
+            if (_cachedInstance != null)
+            {
+                instance = _cachedInstance;
+                return true;
+            }
+
             IntPtr moduleHandle = PebWalker.ResolveModuleFromPeb("advapi32.dll");
+
             if (moduleHandle == IntPtr.Zero)
+            {
+                Kernel32 kernel32 = null;
+                if (Kernel32.TryCreateKernel32(out kernel32) && kernel32 != null)
+                {
+                    moduleHandle = kernel32.LoadLibraryW("advapi32.dll");
+                }
+            }
+
+            if (moduleHandle == IntPtr.Zero)
+            {
+                instance = null;
                 return false;
+            }
 
             IntPtr ptrRegGetValue = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RegGetValueW"));
             if (ptrRegGetValue == IntPtr.Zero)
+            {
+                instance = null;
                 return false;
+            }
 
             RegGetValueDelegate regGetValue = (RegGetValueDelegate)Marshal.GetDelegateForFunctionPointer(ptrRegGetValue, typeof(RegGetValueDelegate));
 
-            instance = new AdvApi(moduleHandle, regGetValue);
-
+            _cachedInstance = new AdvApi(moduleHandle, regGetValue);
+            instance = _cachedInstance;
             return true;
         }
     }

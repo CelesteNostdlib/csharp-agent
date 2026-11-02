@@ -5,7 +5,6 @@ namespace CSharpAgent
 {
     internal class Kernel32
     {
-        public delegate bool ChangeMemoryProtectionDelegate(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
         public delegate IntPtr GetProcAddressDelegate(IntPtr hModule, string lpProcName);
         public delegate bool FlushInstructionCacheDelegate(IntPtr hProcess, IntPtr lpBaseAddress, UIntPtr dwSize);
         public delegate uint GetSystemFirmwareTableDelegate(uint firmwareTableProviderSignature, uint firmwareTableID, byte[] firmwareTableBuffer, uint size);  
@@ -15,7 +14,6 @@ namespace CSharpAgent
         public delegate void GetNativeSystemInfoDelegate(ref SYSTEM_INFO lpSystemInfo);
 
         // Read-only fields ensure immutability and prevent accidental overwriting
-        public readonly ChangeMemoryProtectionDelegate ChangeMemoryProtection;
         public readonly GetProcAddressDelegate GetProcAddress;
         public readonly FlushInstructionCacheDelegate FlushInstructionCache;
         public readonly GetSystemFirmwareTableDelegate GetSystemFirmwareTable;
@@ -27,7 +25,6 @@ namespace CSharpAgent
 
         private Kernel32(
             IntPtr moduleHandle,
-            ChangeMemoryProtectionDelegate changeMemoryProtection,
             GetProcAddressDelegate getProcAddress,
             FlushInstructionCacheDelegate flushInstructionCache,
             GetSystemFirmwareTableDelegate getSystemFirmwareTable,
@@ -35,7 +32,6 @@ namespace CSharpAgent
             GetNativeSystemInfoDelegate getNativeSystemInfo)
         {
             ModuleHandle = moduleHandle;
-            ChangeMemoryProtection = changeMemoryProtection;
             GetProcAddress = getProcAddress;
             FlushInstructionCache = flushInstructionCache;
             GetSystemFirmwareTable = getSystemFirmwareTable;
@@ -80,8 +76,6 @@ namespace CSharpAgent
                 return false;
             }
 
-            var changeMemoryProtection = (ChangeMemoryProtectionDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrVirtualProtect, typeof(ChangeMemoryProtectionDelegate));
             var getProcAddress = (GetProcAddressDelegate)Marshal.GetDelegateForFunctionPointer(
                 ptrGetProcAddress, typeof(GetProcAddressDelegate));
             var flushInstructionCache = (FlushInstructionCacheDelegate)Marshal.GetDelegateForFunctionPointer(
@@ -95,7 +89,6 @@ namespace CSharpAgent
 
             cachedKernel = new Kernel32(
                 moduleHandle,
-                changeMemoryProtection,
                 getProcAddress,
                 flushInstructionCache,
                 getSystemFirmwareTable,

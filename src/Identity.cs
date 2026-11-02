@@ -305,12 +305,10 @@ namespace CSharpAgent
             return "";
         }
 
-        // OS version via RtlGetVersion — the truthful source (Environment.OSVersion inherits
-        // the host manifest's compatibility lies on Windows 8.1+; the JScript agent uses WMI
-        // for the same reason). Format: "major.minor.build" — X-OS-Build is its tail.
+        // OS version via RtlGetVersion — the truthful source. Format: "major.minor.build" — X-OS-Build is its tail.
+        // Falls back to empty string on failure instead of Environment.OSVersion to prevent compatibility lies on Win 8.1+
         private static string OsVersion()
         {
-            string osResult = "";
             try
             {
                 var info = new OSVERSIONINFOW();
@@ -320,19 +318,13 @@ namespace CSharpAgent
                 {
                     if (ntdll.RtlGetVersion(ref info) == 0)
                     {
-                        osResult = info.dwMajorVersion + "." + info.dwMinorVersion + "." + info.dwBuildNumber;
+                        return info.dwMajorVersion + "." + info.dwMinorVersion + "." + info.dwBuildNumber;
                     }
                 }
             }
             catch { }
 
-            if (string.IsNullOrEmpty(osResult))
-            {
-                var v = Environment.OSVersion.Version;
-                osResult = v.Major + "." + v.Minor + "." + v.Build;
-            }
-
-            return osResult;
+            return "";
         }
 
         private static string BuildNumber(string osVersion)

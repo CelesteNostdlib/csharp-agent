@@ -58,31 +58,15 @@ namespace CSharpAgent
             if (moduleHandle == IntPtr.Zero)
                 return false;
 
-            IntPtr ptrRtlGetVersion = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RtlGetVersion"));
-            if (ptrRtlGetVersion == IntPtr.Zero)
-                return false;
-            var rtlGetVersion = (RtlGetVersionDelegate)Marshal.GetDelegateForFunctionPointer(ptrRtlGetVersion, typeof(RtlGetVersionDelegate));
+            var rtlGetVersion = PebWalker.ResolveDelegate<RtlGetVersionDelegate>("ntdll.dll", "RtlGetVersion");
+            var ntQuerySystemInformation = PebWalker.ResolveDelegate<NtQuerySystemInformationDelegate>("ntdll.dll", "NtQuerySystemInformation");
+            var rtlAllocateHeap = PebWalker.ResolveDelegate<RtlAllocateHeapDelegate>("ntdll.dll", "RtlAllocateHeap");
+            var rtlFreeHeap = PebWalker.ResolveDelegate<RtlFreeHeapDelegate>("ntdll.dll", "RtlFreeHeap");
+            var ntAllocateVirtualMemory = PebWalker.ResolveDelegate<NtAllocateVirtualMemoryDelegate>("ntdll.dll", "NtAllocateVirtualMemory");
 
-            IntPtr ptrNtQuerySystemInformation = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("NtQuerySystemInformation"));
-            if (ptrNtQuerySystemInformation == IntPtr.Zero)
+            if (rtlGetVersion == null || ntQuerySystemInformation == null || rtlAllocateHeap == null || rtlFreeHeap == null || ntAllocateVirtualMemory == null)
                 return false;
-            var ntQuerySystemInformation = (NtQuerySystemInformationDelegate)Marshal.GetDelegateForFunctionPointer(ptrNtQuerySystemInformation, typeof(NtQuerySystemInformationDelegate));
-
-            IntPtr ptrRtlAllocateHeap = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RtlAllocateHeap"));
-            if (ptrRtlAllocateHeap == IntPtr.Zero)
-                return false;
-            var rtlAllocateHeap = (RtlAllocateHeapDelegate)Marshal.GetDelegateForFunctionPointer(ptrRtlAllocateHeap, typeof(RtlAllocateHeapDelegate));
-
-            IntPtr ptrRtlFreeHeap = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RtlFreeHeap"));
-            if (ptrRtlFreeHeap == IntPtr.Zero)
-                return false;
-            var rtlFreeHeap = (RtlFreeHeapDelegate)Marshal.GetDelegateForFunctionPointer(ptrRtlFreeHeap, typeof(RtlFreeHeapDelegate));
-
-            IntPtr ptrNtAllocateVirtualMemory = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("NtAllocateVirtualMemory"));
-            if (ptrNtAllocateVirtualMemory == IntPtr.Zero)
-                return false;
-            var ntAllocateVirtualMemory = (NtAllocateVirtualMemoryDelegate)Marshal.GetDelegateForFunctionPointer(ptrNtAllocateVirtualMemory, typeof(NtAllocateVirtualMemoryDelegate));
-
+            
             _cached = new NtdllApi(
                 moduleHandle,
                 rtlGetVersion,

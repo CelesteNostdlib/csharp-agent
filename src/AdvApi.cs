@@ -20,6 +20,7 @@ namespace CSharpAgent
 
         public static bool TryCreateAdvApi(out AdvApi instance)
         {
+            instance = null;
             if (_cachedInstance != null)
             {
                 instance = _cachedInstance;
@@ -37,20 +38,9 @@ namespace CSharpAgent
                 }
             }
 
-            if (moduleHandle == IntPtr.Zero)
-            {
-                instance = null;
+            var regGetValue = PebWalker.ResolveDelegate<RegGetValueDelegate>("advapi32.dll", "RegGetValueW");
+            if (regGetValue == null)
                 return false;
-            }
-
-            IntPtr ptrRegGetValue = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("RegGetValueW"));
-            if (ptrRegGetValue == IntPtr.Zero)
-            {
-                instance = null;
-                return false;
-            }
-
-            RegGetValueDelegate regGetValue = (RegGetValueDelegate)Marshal.GetDelegateForFunctionPointer(ptrRegGetValue, typeof(RegGetValueDelegate));
 
             _cachedInstance = new AdvApi(moduleHandle, regGetValue);
             instance = _cachedInstance;

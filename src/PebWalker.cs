@@ -10,6 +10,20 @@ namespace CSharpAgent
             return new IntPtr((IntPtr.Size == 8 ? p0.ToInt64() : p0.ToInt32()) + p1);
         }
 
+        public static TDelegate ResolveDelegate<TDelegate>(string moduleName, string exportName) where TDelegate : class
+        {
+            IntPtr moduleHandle = ResolveModuleFromPeb(moduleName);
+
+            if (moduleHandle == IntPtr.Zero)
+                return null;
+
+            IntPtr ptrExport = ResolveExportByHash(moduleHandle, HashString(exportName));
+            if (ptrExport == IntPtr.Zero)
+                return null;
+
+            return Marshal.GetDelegateForFunctionPointer(ptrExport, typeof(TDelegate)) as TDelegate;
+        }
+
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate IntPtr GetTebDelegate();
 

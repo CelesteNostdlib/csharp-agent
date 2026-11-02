@@ -51,34 +51,17 @@ namespace CSharpAgent
 
             IntPtr moduleHandle = PebWalker.ResolveModuleFromPeb("kernel32.dll");
             if (moduleHandle == IntPtr.Zero)
-            {
                 return false;
-            }
+            
 
-            IntPtr ptrVirtualProtect           = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("VirtualProtect"));
-            IntPtr ptrGetProcAddress           = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetProcAddress"));
-            IntPtr ptrGetSystemFirmwareTable = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetSystemFirmwareTable"));
-            IntPtr ptrLoadLibraryW             = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("LoadLibraryW"));
-            IntPtr ptrGetNativeSystemInfo    = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("GetNativeSystemInfo"));
+            var getProcAddress = PebWalker.ResolveDelegate<GetProcAddressDelegate>("kernel32.dll", "GetProcAddress");
+            var getSystemFirmwareTable = PebWalker.ResolveDelegate<GetSystemFirmwareTableDelegate>("kernel32.dll", "GetSystemFirmwareTable");
+            var loadLibraryW = PebWalker.ResolveDelegate<LoadLibraryWDelegate>("kernel32.dll", "LoadLibraryW");
+            var getNativeSystemInfo = PebWalker.ResolveDelegate<GetNativeSystemInfoDelegate>("kernel32.dll", "GetNativeSystemInfo");
 
-            if (ptrVirtualProtect == IntPtr.Zero || 
-                ptrGetProcAddress == IntPtr.Zero || 
-                ptrGetSystemFirmwareTable == IntPtr.Zero ||
-                ptrLoadLibraryW == IntPtr.Zero ||
-                ptrGetNativeSystemInfo == IntPtr.Zero)
-            {
+            if (getProcAddress == null || getSystemFirmwareTable == null || loadLibraryW == null || getNativeSystemInfo == null)
                 return false;
-            }
-
-            var getProcAddress = (GetProcAddressDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrGetProcAddress, typeof(GetProcAddressDelegate));
-            var getSystemFirmwareTable = (GetSystemFirmwareTableDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrGetSystemFirmwareTable, typeof(GetSystemFirmwareTableDelegate));
-            var loadLibraryW = (LoadLibraryWDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrLoadLibraryW, typeof(LoadLibraryWDelegate));
-            var getNativeSystemInfo = (GetNativeSystemInfoDelegate)Marshal.GetDelegateForFunctionPointer(
-                ptrGetNativeSystemInfo, typeof(GetNativeSystemInfoDelegate));
-
+                
             cachedKernel = new Kernel32(
                 moduleHandle,
                 getProcAddress,

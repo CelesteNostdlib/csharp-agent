@@ -39,14 +39,9 @@ namespace CSharpAgent
                 }
             }
 
-            if (moduleHandle == IntPtr.Zero)
+            var messageBoxW = PebWalker.ResolveDelegate<MessageBoxWDelegate>("user32.dll", "MessageBoxW");
+            if (messageBoxW == null)
                 return false;
-
-            IntPtr ptrMessageBoxW = PebWalker.ResolveExportByHash(moduleHandle, PebWalker.HashString("MessageBoxW"));
-            if (ptrMessageBoxW == IntPtr.Zero)
-                return false;
-
-            var messageBoxW = (MessageBoxWDelegate)Marshal.GetDelegateForFunctionPointer(ptrMessageBoxW, typeof(MessageBoxWDelegate));
 
             _cachedInstance = new User32(moduleHandle, messageBoxW);
             instance = _cachedInstance;
